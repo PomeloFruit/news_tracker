@@ -3,9 +3,11 @@ import pathlib
 import json
 import hashlib
 import requests
+import dotenv
 from datetime import datetime, timedelta
 from config import TOPICS
 
+dotenv.load_dotenv()
 API_KEY = os.environ["NEWSAPI_KEY"]
 BASE_URL = "https://newsapi.org/v2/everything"
 ARTICLE_FILE = "collected_articles.json"
@@ -38,7 +40,7 @@ def fetch_articles(query):
     'sortBy=publishedAt' ensures newest articles come first.
     'pageSize=10' keeps us well within the free tier limits.
     """
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S")
+    yesterday = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S")
     response = requests.get(BASE_URL,
         params={
             "q": query,
@@ -67,15 +69,28 @@ def process_topic(topic, seen_articles):
     new_articles = []
 
     print("Articles fetched: ", len(articles))
-    print("Articles: ", articles)
-
     for article in articles:
         article_hash = hash_article(article)
         if article_hash not in seen_set:
             seen_set.add(article_hash)
-            article["id"] = article_hash
-            new_articles.append(article)
 
+            event = {
+                "id": article_hash,
+                "source": article.get("source", {}).get("name", ""),
+                "author": article.get("author", ""),
+                "title": article.get("title", ""),
+                "description": article.get("description", ""),
+                "url": article.get("url", ""),
+                "published_at": article.get("publishedAt", ""),
+                "content": article.get("content", ""),
+                "urlToImage": article.get("urlToImage", ""),
+                "query": topic["query"],
+                "category": topic["category"],
+                "tags": topic["tags"],
+                "fetched_at": datetime.now().isoformat(),
+            }
+            new_articles.append(event)
+    print(f"New articles found: {len(new_articles)} Articles Skipped: {len(articles) - len(new_articles)}")
     return new_articles
 
 def main():
