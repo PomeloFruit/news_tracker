@@ -1,4 +1,4 @@
-import pool from '@/lib/db';
+import { getArticlesByQuery } from '@/lib/articles';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,14 +9,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await pool.query(
-      `SELECT id, title, source, author, description, url, published_at, url_to_image
-       FROM articles
-       WHERE query = $1
-       ORDER BY published_at DESC`,
-      [query]
-    );
-    return Response.json(result.rows);
+    const articles = await getArticlesByQuery(query);
+    return Response.json(articles);
   } catch (err) {
     console.error('articles query failed', err);
     return Response.json({ error: 'Internal Server Error' }, { status: 500 });

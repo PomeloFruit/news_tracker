@@ -1,11 +1,9 @@
-import pool from '@/lib/db';
+import { getTopics } from '@/lib/articles';
 
 export async function GET() {
   try {
-    const result = await pool.query(
-      'SELECT DISTINCT query, category FROM articles ORDER BY category'
-    );
-    return Response.json(result.rows);
+    const topics = await getTopics();
+    return Response.json(topics);
   } catch (err) {
     console.error('topics query failed', err);
     return Response.json({ error: 'Internal Server Error' }, { status: 500 });
