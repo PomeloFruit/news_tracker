@@ -21,3 +21,15 @@ export async function getArticlesByQuery(query: string): Promise<Article[]> {
   );
   return result.rows;
 }
+
+export interface Topic {
+  query: string;
+  category: string;
+}
+
+export async function getTopics(): Promise<Topic[]> {
+  const result = await pool.query(
+    'SELECT DISTINCT query, category FROM articles ORDER BY category'
+  );
+  return result.rows;
+}
