@@ -4,6 +4,7 @@ import json
 import hashlib
 import requests
 import dotenv
+import kafka as kk
 from datetime import datetime, timedelta
 from config import TOPICS
 
@@ -58,14 +59,13 @@ def fetch_articles(query):
     return data.get("articles", [])
 
 # Process the given topic by fetching the relevant articles. Only add the unseen articles
-def process_topic(topic, seen_articles):
+def process_topic(topic, seen_set, producer):
     """Fetch articles for one topic and return only new (unseen) ones.
     
     Each new article is enriched with metadata from our config —
     the category and tags
     """
     articles = fetch_articles(topic["query"])
-    seen_set = set({article["id"] for article in seen_articles})
     new_articles = []
 
     print("Articles fetched: ", len(articles))
@@ -90,13 +90,28 @@ def process_topic(topic, seen_articles):
                 "fetched_at": datetime.now().isoformat(),
             }
             new_articles.append(event)
+            producer.send("news-articles", value=event)
+    
     print(f"New articles found: {len(new_articles)} Articles Skipped: {len(articles) - len(new_articles)}")
     return new_articles
 
 def main():
+    # Kafka producer init, need to turn passed python object
+    # into a serialized bytestream using value_serializer
+    producer = kk.KafkaProducer(
+        bootstrap_servers="localhost:9092",
+        value_serializer=lambda v: json.dumps(v).encode("utf-8")
+    )
+    
     seen_articles = load_seen(ARTICLE_FILE)
+    seen_set = set({article["id"] for article in seen_articles})
+    new_articles = []
+
     for topic in TOPICS:
-        new_articles = process_topic(topic, seen_articles)
+        new_articles += process_topic(topic, seen_set, producer)
+
+    producer.flush()
+    producer.close()
     save_seen(ARTICLE_FILE, seen_articles + new_articles)
 
 if __name__ == "__main__":
