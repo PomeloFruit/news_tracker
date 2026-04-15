@@ -14,8 +14,9 @@ interface Article {
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+  if (isNaN(date.getTime())) return 'Unknown date';
+  const diffMs = new Date().getTime() - date.getTime();
+  if (diffMs < 0) return 'Just now';
   const diffMins = Math.floor(diffMs / 60000);
   if (diffMins < 60) return `${diffMins}m ago`;
   const diffHours = Math.floor(diffMins / 60);
@@ -30,6 +31,7 @@ export default function ArticleCard({ article }: { article: Article }) {
       href={article.url}
       target="_blank"
       rel="noopener noreferrer"
+      aria-label={`${article.title} (opens in new tab)`}
       className="group block"
     >
       <article className="relative bg-[#0D0F14] border border-[#1E2430] hover:border-amber-400/40 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(251,191,36,0.08)]">
