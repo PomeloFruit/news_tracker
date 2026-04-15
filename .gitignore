@@ -21,3 +21,5 @@ env/
 
 # Git worktrees
 .worktrees/
+
+web/.env.local
