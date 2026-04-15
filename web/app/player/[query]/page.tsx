@@ -1,15 +1,5 @@
 import ArticleCard from '@/components/ArticleCard';
-
-interface Article {
-  id: string;
-  title: string;
-  source: string;
-  author: string | null;
-  description: string | null;
-  url: string;
-  published_at: string;
-  url_to_image: string | null;
-}
+import { getArticlesByQuery, type Article } from '@/lib/articles';
 
 interface PlayerPageProps {
   params: Promise<{ query: string }>;
@@ -19,14 +9,19 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   const { query: encodedQuery } = await params;
   const query = decodeURIComponent(encodedQuery);
 
-  const res = await fetch(
-    `http://localhost:3000/api/articles?query=${encodeURIComponent(query)}`,
-    { cache: 'no-store' }
-  );
-
   let articles: Article[] = [];
-  if (res.ok) {
-    articles = await res.json();
+  try {
+    articles = await getArticlesByQuery(query);
+  } catch (err) {
+    console.error('Failed to fetch articles', err);
+    return (
+      <main className="min-h-screen bg-[#0D0F14] px-6 py-10 max-w-4xl mx-auto">
+        <div className="text-center py-20" style={{ fontFamily: 'var(--font-mono)' }}>
+          <p className="text-lg text-amber-400">SIGNAL LOST</p>
+          <p className="text-sm mt-2 text-[#6B7A8D]">Failed to load articles. Check your database connection.</p>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -47,7 +42,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
         </p>
       </div>
 
-      {/* Articles grid */}
+      {/* Articles */}
       {articles.length === 0 ? (
         <div className="text-center py-20 text-[#2E3A4E]" style={{ fontFamily: 'var(--font-mono)' }}>
           <p className="text-lg">NO SIGNAL</p>

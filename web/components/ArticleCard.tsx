@@ -1,16 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-
-interface Article {
-  id: string;
-  title: string;
-  source: string;
-  author: string | null;
-  description: string | null;
-  url: string;
-  published_at: string;
-  url_to_image: string | null;
-}
+import { type Article } from '@/lib/articles';
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
